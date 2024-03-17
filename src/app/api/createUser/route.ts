@@ -4,6 +4,7 @@ import { collection, doc, getDocs, query, setDoc } from "firebase/firestore"
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import { ethers } from "ethers"
 import { createSmartAccountClient} from "@biconomy/account"
+import ERC20 from '@/utils/ERC20.json'
 
 export async function POST(request: NextRequest){
   const authHeader = request.headers.get('authorization');
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest){
     const userBase = doc(db, "users", data.email)
     const usersRef = collection(db, "users")
     const queryIndex = query(usersRef)
-    const index = (await getDocs(queryIndex)).size
+    const index = (await getDocs(queryIndex)).size || 0
 
     let provider = new ethers.providers.JsonRpcProvider(
       {
@@ -31,12 +32,11 @@ export async function POST(request: NextRequest){
     
     const biconomySmartAccountConfig = {
       signer: signer,
-      bundlerUrl: process.env.BUNLDER_URL as string,
+      bundlerUrl: process.env.BUNDLER_URL as string,
       biconomyPaymasterApiKey: process.env.PAYMASTER_API_KEY,
     }
 
     const smartAccount = await createSmartAccountClient(biconomySmartAccountConfig);
-
     const smartWallet = await smartAccount.getAccountAddress({index: index})
     
     await createUserWithEmailAndPassword(auth, data.email, data.senha)
@@ -49,8 +49,15 @@ export async function POST(request: NextRequest){
         uid: uid,
         email: data.email,
         wallet: smartWallet,
-        alchemyWallet: ''
+        alchemyWallet: '',
+        idWallet: index
       })
+
+      var amount: any = ethers.utils.parseUnits('100', 18)
+      const contract = new ethers.Contract(`${process.env.NEXT_PUBLIC_CONTRACTERC20}`, ERC20, signer)      
+      const tx = await contract.transfer(smartWallet, amount.toString())
+      const receipt = await tx.wait()
+      console.log('receipt:',receipt)
   
     }).catch((error)=>{
       const errorCode = error.code;

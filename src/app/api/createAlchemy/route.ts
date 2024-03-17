@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from "next/server"
 import { createModularAccountAlchemyClient } from "@alchemy/aa-alchemy"
-import { LocalAccountSigner, polygonMumbai, type Hex, Address } from "@alchemy/aa-core"
-import { ethers } from "ethers";
+import { LocalAccountSigner, polygonMumbai, type Address } from "@alchemy/aa-core"
 import { doc, updateDoc } from "firebase/firestore";
 import initializeFirebaseClient from "@/utils/firebaseConnection";
 
